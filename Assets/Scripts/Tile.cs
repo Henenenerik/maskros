@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,8 +12,16 @@ public class Tile : MonoBehaviour
 
     private bool showText;
 
+    public bool IsPossibleMoveTarget { get; private set; } = false;
     private bool zoneOfControlToggle = false;
     private Color originalColor;
+
+    [SerializeField]
+    private SpriteRenderer[] renderers;
+    private const int BaseRenderer = 0;
+    private const int ZoneOfControlRenderer = 1;
+    private const int HighlightRenderer = 2;
+
 
     public (int, int) GetIndicies() { return (x, y); }
 
@@ -50,8 +57,10 @@ public class Tile : MonoBehaviour
         SetIndicies(x, y);
         terrainType = ColorToTerrain(color);
 
-        gameObject.GetComponent<SpriteRenderer>().color = color;
+        renderers[BaseRenderer].color = color;
         originalColor = color;
+        renderers[ZoneOfControlRenderer].enabled = false;
+        renderers[HighlightRenderer].enabled = false;
     }
 
     public static Terrain ColorToTerrain(Color color)
@@ -90,7 +99,7 @@ public class Tile : MonoBehaviour
 
     public void ToggleZoneOfControlIndication()
     {
-        GetComponent<SpriteRenderer>().color = Color.Lerp(originalColor, Color.red, zoneOfControlToggle ? 0.0f : 0.4f);
+        renderers[ZoneOfControlRenderer].enabled = true;
         zoneOfControlToggle = true;
     }
 
@@ -99,7 +108,25 @@ public class Tile : MonoBehaviour
         if (zoneOfControlToggle)
         {
             zoneOfControlToggle = false;
-            GetComponent<SpriteRenderer>().color = originalColor;
+            renderers[ZoneOfControlRenderer].enabled = false;
+        }
+    }
+
+    public void TogglePossibleSelection()
+    {
+        if (!renderers[ZoneOfControlRenderer].enabled)
+        {
+            renderers[HighlightRenderer].enabled = true;
+        }
+        IsPossibleMoveTarget = true;
+    }
+
+    public void UntogglePossibleSelection()
+    {
+        if (IsPossibleMoveTarget)
+        {
+            renderers[HighlightRenderer].enabled = false;
+            IsPossibleMoveTarget = false;
         }
     }
 

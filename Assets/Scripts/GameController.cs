@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -96,7 +97,7 @@ public class GameController : MonoBehaviour
     {
         if (turnPhase == TurnPhase.Movement)
         {
-            map.ToggleZoneOfControlIndication();
+            map.ToggleTileMovementHighlighting(0);
             map.UpdateZoneOfControlMap(0);
         }
     }
@@ -105,7 +106,7 @@ public class GameController : MonoBehaviour
     {
         if (turnPhase == TurnPhase.Movement)
         {
-            map.ToggleZoneOfControlIndication();
+            map.ToggleTileMovementHighlighting(0);
         }
     }
 
@@ -140,4 +141,17 @@ public class GameController : MonoBehaviour
         return turnComplete;
     }
 
+    public void ShowPossibleMoves(Unit u)
+    {
+        var res = map.FindPossibleMoves(u);
+        foreach(var tile in res)
+        {
+            tile.TogglePossibleSelection();
+        }
+    }
+
+    public void HidePossibleMoves(Unit u)
+    {
+        map.ApplyToTiles(t => t.UntogglePossibleSelection());
+    }
 }

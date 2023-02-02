@@ -17,7 +17,7 @@ public class InputManager : MonoBehaviour
 
     public GameObject objectHit;
 
-    private bool holdingDragMove;
+    private bool successfulMoveCommand = false;
     private Tile targetTile;
 
     private void Awake()
@@ -61,13 +61,24 @@ public class InputManager : MonoBehaviour
                     Unit u = hit.collider.gameObject.GetComponent<Unit>();
                     if (u.GetTeam() == CurrentTeam)
                     {
-                        u.Select();
                         if (selected.Contains(u))
                         {
+                            u.Select();
                             selected.Remove(u);
+                            gameController.HidePossibleMoves(u);
                         }
-                        else
+                        else if (selected.Count == 0 ||
+                            (selected.Count == 1 && 
+                            u != selected[0]))
                         {
+                            if (selected.Count == 1)
+                            {
+                                selected[0].Select();
+                                gameController.HidePossibleMoves(selected[0]);
+                                selected.RemoveAt(0);
+                            }
+                            u.Select();
+                            gameController.ShowPossibleMoves(u);
                             selected.Add(u);
                         }
                     }
@@ -83,26 +94,33 @@ public class InputManager : MonoBehaviour
             {
                 objectHit = hit.collider.gameObject;
                 targetTile = hit.collider.gameObject.GetComponent<Tile>();
+                if (!targetTile.IsPossibleMoveTarget)
+                {
+                    return;
+                }
+                successfulMoveCommand = true;
                 foreach (Unit u in selected)
                 {
                     u.MoveCommand(gameController.map, targetTile);
                 }
             }
         }
-        else if (Input.GetMouseButton(1))
+        else if (Input.GetMouseButton(1) && successfulMoveCommand)
         {
             foreach (Unit u in selected)
             {
                 u.SetGhostDirection(mainCamera.ScreenToWorldPoint(Input.mousePosition));
             }
         }
-        else if (Input.GetMouseButtonUp(1))
+        else if (Input.GetMouseButtonUp(1) && successfulMoveCommand)
         {
             foreach (Unit u in selected)
             {
                 u.Select();
+                gameController.HidePossibleMoves(u);
             }
             selected.Clear();
+            successfulMoveCommand = false;
         }
     }
 }

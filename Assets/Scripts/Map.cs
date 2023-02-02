@@ -296,22 +296,77 @@ public class Map
         }
     }
 
-    public void ToggleZoneOfControlIndication()
+    public void ToggleTileMovementHighlighting(int team)
     {
         if (zoneOfControlToggled)
         {
-            ApplyToTiles(t => t.UntoggleZoneOfControlIndication());
+            ApplyToTiles(t =>
+            {
+                t.UntoggleZoneOfControlIndication();
+                t.UntogglePossibleSelection();
+            });
         }
         else
         {
             if (unitToPosition != null)
             {
-                foreach ((int x, int y) in unitToPosition.Keys.SelectMany(key => key.GetZoneOfControl()).Distinct())
+                foreach ((int x, int y) in unitToPosition.Keys.Where(u => u.GetTeam() != team).SelectMany(key => key.GetZoneOfControl()).Distinct())
                 {
                     map[x, y].ToggleZoneOfControlIndication();
                 }
             }
         }
         zoneOfControlToggled = !zoneOfControlToggled;
+    }
+
+    public List<Tile> FindPossibleMoves(Unit unit)
+    {
+        (var start_x, var start_y) = unit.GetGridPosition();
+        var exploredTiles = new Dictionary<(int, int), (float, Tile)>();
+
+        var frontier = new Queue<Tile>();
+        var neighbours = new List<Tile>();
+        frontier.Enqueue(map[start_x, start_y]);
+        exploredTiles.Add((start_x, start_y), (4f, map[start_x, start_y])); // TODO: Change to movement of unit
+
+        (float RemainingMovement, Tile tile) probe;
+
+        while(frontier.Count > 0)
+        {
+            var explore = frontier.Dequeue();
+            (var x, var y) = explore.GetIndicies();
+
+            if (exploredTiles.TryGetValue((x, y), out probe) && probe.RemainingMovement <= 0)
+            {
+                continue;
+            }
+
+            var fromZoneOfControl = positionToUnitZoneOfControl.ContainsKey(explore.GetIndicies()) && (x != start_x || y != start_y);
+
+            Neighbours(ref neighbours, x, y);
+
+            var cumulativeMovement = exploredTiles[(x, y)].Item1;
+            foreach(var neighbour in neighbours)
+            {
+                var remainingMovement = cumulativeMovement - neighbour.GetMovementCost();
+                if (!exploredTiles.TryGetValue(neighbour.GetIndicies(), out probe))
+                {
+                    (var n_x, var n_y) = neighbour.GetIndicies();
+                    if (ProbeTile(n_x, n_y, unit.GetTeam()) != OccupiedStatus.Enemy && 
+                        !fromZoneOfControl &&
+                        !tilesOccupiedNextTurn.ContainsKey(neighbour.GetIndicies()))
+                    {
+                        exploredTiles.Add(neighbour.GetIndicies(), (remainingMovement, neighbour));
+                        frontier.Enqueue(neighbour);
+                    }
+                } else if (probe.RemainingMovement < remainingMovement)
+                {
+                    exploredTiles[neighbour.GetIndicies()] = (remainingMovement, neighbour);
+                    frontier.Enqueue(neighbour);
+                }
+            }
+        }
+
+        return exploredTiles.Values.Select(item => item.Item2).ToList();
     }
 }

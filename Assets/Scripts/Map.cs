@@ -101,6 +101,18 @@ public class Map
         }
     }
 
+    internal void MarkUnitsForCombat()
+    {
+        foreach(var tileAndUnit in tilesOccupiedNextTurn)
+        {
+            if (!positionToUnitZoneOfControl.ContainsKey(tileAndUnit.Key))
+            {
+                continue;
+            }
+            tileAndUnit.Value.MarkedForCombat = true;
+        }
+    }
+
     public void ApplyToTiles(Action<Tile> f)
     {
         foreach (Tile t in map)
@@ -329,14 +341,12 @@ public class Map
         frontier.Enqueue(map[start_x, start_y]);
         exploredTiles.Add((start_x, start_y), (4f, map[start_x, start_y])); // TODO: Change to movement of unit
 
-        (float RemainingMovement, Tile tile) probe;
-
-        while(frontier.Count > 0)
+        while (frontier.Count > 0)
         {
             var explore = frontier.Dequeue();
             (var x, var y) = explore.GetIndicies();
 
-            if (exploredTiles.TryGetValue((x, y), out probe) && probe.RemainingMovement <= 0)
+            if (exploredTiles.TryGetValue((x, y), out (float RemainingMovement, Tile tile) probe) && probe.RemainingMovement <= 0)
             {
                 continue;
             }
@@ -346,20 +356,21 @@ public class Map
             Neighbours(ref neighbours, x, y);
 
             var cumulativeMovement = exploredTiles[(x, y)].Item1;
-            foreach(var neighbour in neighbours)
+            foreach (var neighbour in neighbours)
             {
                 var remainingMovement = cumulativeMovement - neighbour.GetMovementCost();
                 if (!exploredTiles.TryGetValue(neighbour.GetIndicies(), out probe))
                 {
                     (var n_x, var n_y) = neighbour.GetIndicies();
-                    if (ProbeTile(n_x, n_y, unit.GetTeam()) != OccupiedStatus.Enemy && 
+                    if (ProbeTile(n_x, n_y, unit.GetTeam()) != OccupiedStatus.Enemy &&
                         !fromZoneOfControl &&
                         !tilesOccupiedNextTurn.ContainsKey(neighbour.GetIndicies()))
                     {
                         exploredTiles.Add(neighbour.GetIndicies(), (remainingMovement, neighbour));
                         frontier.Enqueue(neighbour);
                     }
-                } else if (probe.RemainingMovement < remainingMovement)
+                }
+                else if (probe.RemainingMovement < remainingMovement)
                 {
                     exploredTiles[neighbour.GetIndicies()] = (remainingMovement, neighbour);
                     frontier.Enqueue(neighbour);

@@ -100,13 +100,35 @@ public class GameController : MonoBehaviour
             map.ToggleTileMovementHighlighting(0);
             map.UpdateZoneOfControlMap(0);
         }
+        else if (turnPhase == TurnPhase.Combat)
+        {
+            foreach(var unit in units)
+            {
+                if (unit.MarkedForCombat)
+                {
+                    unit.ToggleHighlight();
+                }
+            }
+        }
     }
 
     private void OnPhaseEnd()
     {
         if (turnPhase == TurnPhase.Movement)
         {
+            map.MarkUnitsForCombat();
             map.ToggleTileMovementHighlighting(0);
+        }
+        else if (turnPhase == TurnPhase.Combat)
+        {
+            foreach (var unit in units)
+            {
+                if (unit.MarkedForCombat)
+                {
+                    unit.ToggleHighlight();
+                }
+                unit.MarkedForCombat = false;
+            }
         }
     }
 

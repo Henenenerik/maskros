@@ -26,8 +26,7 @@ public class Infantry : Unit
         remainingMovementPoints = movementPoints;
         initiative = BaseInitiative;
         maxMorale = currentMorale = BaseMorale;
-        orderHighlight = Instantiate(orderHighlightPrefab);
-        orderHighlight.SetActive(false);
+        ghostOrder.SetActive(false);
     }
 
     // Update is called once per frame

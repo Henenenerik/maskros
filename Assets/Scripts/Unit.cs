@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,8 +6,16 @@ using UnityEngine;
 
 public abstract class Unit : MonoBehaviour
 {
-    public GameObject orderHighlightPrefab;
-    public GameObject orderHighlight;
+    public bool MarkedForCombat { get; set; }
+
+    [SerializeField]
+    protected SpriteRenderer[] HighlightRenderers;
+    protected const int SelectedHighlight = 0;
+    protected const int MarkedForCombatHighlight = 1;
+
+    [SerializeField]
+    protected GameObject ghostOrder;
+
     private int team;
 
     protected float movementPoints;
@@ -39,11 +48,11 @@ public abstract class Unit : MonoBehaviour
 
     public void SetGhostDirection(Vector3 target)
     {
-        var hmm = (target - orderHighlight.transform.position);
+        var hmm = (target - ghostOrder.transform.position);
         var euler = Quaternion.LookRotation(Vector3.forward, hmm.normalized).eulerAngles;
         euler = new Vector3(euler.x, euler.y, Mathf.Round(euler.z / 60) * 60);
         ghostDirection = UnitDirectionHelper.rotationToDirection(euler.z);
-        orderHighlight.transform.rotation = Quaternion.Euler(euler);
+        ghostOrder.transform.rotation = Quaternion.Euler(euler);
     }
 
     public List<(int, int)> GetZoneOfControl()
@@ -97,12 +106,12 @@ public abstract class Unit : MonoBehaviour
             LineRenderer lr = gameObject.GetComponent<LineRenderer>();
             lr.positionCount = verticies.Length;
             lr.SetPositions(verticies);
-            orderHighlight.SetActive(true);
-            orderHighlight.transform.position = currentMoveCommand[currentMoveCommand.Count - 1].transform.position + new Vector3(0f, 0f, -1.5f);
+            ghostOrder.SetActive(true);
+            ghostOrder.transform.position = currentMoveCommand[currentMoveCommand.Count - 1].transform.position + new Vector3(0f, 0f, -1.5f);
         }
         else
         {
-            orderHighlight.SetActive(false);
+            ghostOrder.gameObject.SetActive(false);
             gameObject.GetComponent<LineRenderer>().positionCount = 0;
         }
     }

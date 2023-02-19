@@ -1,5 +1,7 @@
 # Maskros
 
+C# files at https://github.com/Henenenerik/maskros/tree/main/Assets/Scripts
+
 ## TODO:
 
 ### Stridsregler
